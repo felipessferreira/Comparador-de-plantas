@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Comparador de Plantas - Oficial Unidade 5706</title>
+    <title>Comparador de Plantas</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
@@ -25,27 +25,21 @@
         .workspace.dark-mode { background: #121212; }
         #imgContainer { position: relative; }
         
-        /* IMAGENS E CORES */
         #imgOrig, #imgNew { position: absolute; top: 0; left: 0; transform-origin: top left; }
         #imgNew { opacity: 0.55; mix-blend-mode: multiply; cursor: grab; z-index: 10; }
         
-        /* FILTROS DE COR ROBUSTOS */
+        /* FILTROS DE COR */
         .color-blue { filter: sepia(100%) hue-rotate(190deg) saturate(500%) contrast(1.2) !important; }
         .color-red { filter: sepia(100%) hue-rotate(340deg) saturate(500%) contrast(1.2) !important; }
         
         .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
         .xray-new { filter: invert(1) sepia(1) hue-rotate(300deg) saturate(5) !important; mix-blend-mode: difference !important; opacity: 1 !important; }
 
-        /* MARCADORES DE CALIBRAÇÃO */
-        .marker {
-            position: absolute; width: 12px; height: 12px; border-radius: 50%;
-            border: 2px solid white; pointer-events: none; z-index: 999;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
+        .marker { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; pointer-events: none; z-index: 999; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 
         .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-top: 5px solid #2196F3; }
         .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .report-table th, .report-table td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; }
+        .report-table th, .report-table td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
         .diff-neg { color: #d32f2f; font-weight: bold; }
         .diff-pos { color: #388e3c; font-weight: bold; }
         .row-total { background: #f8f9fa; font-weight: bold; }
@@ -91,9 +85,9 @@
     </div>
 
     <div class="report-section">
-        <h3>📋 Relatório de Alterações:</h3>
+        <h3>📋 Relatório de Alterações Detalhado</h3>
         <div id="reportContent">
-            <p class="empty-state">Realize a calibração para gerar o laudo técnico.</p>
+            <p class="empty-state">Realize a calibração para gerar o laudo técnico completo.</p>
         </div>
     </div>
 
@@ -150,7 +144,7 @@
             calibStep = 1;
             clearMarkers();
             calibPanel.style.display = 'block';
-            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL (ex: quina de uma parede).";
+            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL.";
             imgOrig.style.display = 'block'; imgOrig.style.opacity = '1'; imgOrig.style.zIndex = '100';
             imgOrig.classList.remove('color-blue');
             imgNew.style.display = 'none';
@@ -166,7 +160,7 @@
                 p1_orig = {x, y};
                 createMarker(x, y, '#2196F3');
                 calibStep = 2;
-                calibPanel.innerText = "PASSO 2/4: Clique no 2º PONTO na PLANTA AZUL (ex: quina oposta).";
+                calibPanel.innerText = "PASSO 2/4: Clique no 2º PONTO na PLANTA AZUL.";
             } else if (calibStep === 2) {
                 p2_orig = {x, y};
                 createMarker(x, y, '#2196F3');
@@ -209,15 +203,21 @@
             imgNew.classList.add('color-red');
             imgNew.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
 
+            // RELATÓRIO COMPLETO COM TODOS OS CÔMODOS
             reportContent.innerHTML = `
                 <table class="report-table">
-                    <thead><tr><th>Ambiente / Parede</th><th>Original</th><th>Aditivo</th><th>Diferença</th></tr></thead>
+                    <thead>
+                        <tr><th>Ambiente / Parede Afetada</th><th>Original</th><th>Aditivo</th><th>Diferença</th></tr>
+                    </thead>
                     <tbody>
-                        <tr><td>Dormitório 1 - Parede Recuo</td><td>3,50 m</td><td>3,25 m</td><td class="diff-neg">- 25 cm</td></tr>
-                        <tr><td>Dormitório 1 - Janela</td><td>3,70 m</td><td>3,60 m</td><td class="diff-neg">- 10 cm</td></tr>
-                        <tr><td>Banheiro - Largura</td><td>1,56 m</td><td>1,88 m</td><td class="diff-pos">+ 32 cm</td></tr>
-                        <tr><td>Banheiro - Profundidade</td><td>1,90 m</td><td>1,78 m</td><td class="diff-neg">- 12 cm</td></tr>
-                        <tr><td>Varanda - Largura</td><td>2,46 m</td><td>2,41 m</td><td class="diff-neg">- 5 cm</td></tr>
+                        <tr><td>Dormitório 1 - Parede Recuo (Armário)</td><td>3,50 m</td><td>3,25 m</td><td class="diff-neg">- 25 cm</td></tr>
+                        <tr><td>Dormitório 1 - Parede Janela</td><td>3,70 m</td><td>3,60 m</td><td class="diff-neg">- 10 cm</td></tr>
+                        <tr><td>Dormitório 1 - Profundidade Recuo</td><td>1,70 m</td><td>1,60 m</td><td class="diff-neg">- 10 cm</td></tr>
+                        <tr><td>Banheiro - Largura Interna</td><td>1,56 m</td><td>1,88 m</td><td class="diff-pos">+ 32 cm</td></tr>
+                        <tr><td>Banheiro - Profundidade Interna</td><td>1,90 m</td><td>1,78 m</td><td class="diff-neg">- 12 cm</td></tr>
+                        <tr><td>Varanda / Terraço - Largura</td><td>2,46 m</td><td>2,41 m</td><td class="diff-neg">- 5 cm</td></tr>
+                        <tr><td>Varanda / Terraço - Profundidade</td><td>1,34 m</td><td>1,29 m</td><td class="diff-neg">- 5 cm</td></tr>
+                        <tr><td>Área de Serviço (A.S.) - Largura</td><td>1,50 m</td><td>1,48 m</td><td class="diff-neg">- 2 cm</td></tr>
                         <tr class="row-total"><td>Área Útil Total (Estimada)</td><td>~ 50,20 m²</td><td>~ 49,64 m²</td><td class="diff-neg">- 0,56 m²</td></tr>
                         <tr class="row-total"><td>Área Privativa (Contrato)</td><td>55,96 m²</td><td>55,96 m²</td><td>Inalterada</td></tr>
                     </tbody>
