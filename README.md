@@ -2,7 +2,7 @@
 
 Este projeto é uma ferramenta web estática e segura projetada para realizar a sobreposição e comparação visual entre duas plantas de imóveis (original vs. aditivo). Ela foi desenvolvida para identificar alterações milimétricas em projetos de apartamentos, utilizando calibração por pontos para ignorar variações de escala em arquivos PDF/Imagens.
 
-## 📋 Contexto do Projeto (Unidade 5706)
+## 📋 Contexto do Projeto
 
 O sistema foi configurado para analisar o impacto do termo aditivo do empreendimento **Jardim dos Ipês**. A análise foca na distinção entre:
 
