@@ -2,11 +2,10 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Comparador de Plantas - Oficial Unidade 5706</title>
+    <title>Comparador de Plantas - Versão Final</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* AVISO DE RESPONSABILIDADE */
         .aviso-legal {
             background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
             padding: 15px 20px; border-radius: 6px; max-width: 1100px; width: 100%;
@@ -16,27 +15,25 @@
         .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; justify-content: center; }
         .card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
         
-        /* BOTÕES E CONTROLES */
         .btn { padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
         .btn-primary { background: #2196F3; color: white; width: 100%; }
+        .btn-primary:hover { background: #1976D2; }
         .btn-xray { background: #9C27B0; color: white; flex: 1; }
         .btn-blink { background: #FF9800; color: white; flex: 1; }
         .btn-blink.ativo { background: #d32f2f; }
 
-        /* WORKSPACE */
         .workspace { position: relative; width: 100%; max-width: 1200px; height: 65vh; background: #fff; border: 2px dashed #bbb; border-radius: 8px; overflow: auto; margin-top: 20px; transition: background 0.3s; }
         .workspace.dark-mode { background: #121212; }
-        #imgContainer { position: relative; }
+        #imgContainer { position: relative; min-height: 100%; }
         #imgOrig, #imgNew { position: absolute; top: 0; left: 0; transform-origin: top left; }
-        #imgNew { opacity: 0.55; mix-blend-mode: multiply; cursor: grab; }
+        #imgNew { opacity: 0.55; mix-blend-mode: multiply; cursor: grab; z-index: 10; }
+        #imgOrig { z-index: 5; }
 
-        /* FILTROS E MODOS */
         .color-blue { filter: sepia(100%) hue-rotate(190deg) saturate(400%); }
         .color-red { filter: sepia(100%) hue-rotate(330deg) saturate(400%); }
         .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
         .xray-new { filter: invert(1) sepia(1) hue-rotate(300deg) saturate(5) !important; mix-blend-mode: difference !important; opacity: 1 !important; }
 
-        /* TABELA DE LAUDO */
         .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-top: 5px solid #2196F3; }
         .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         .report-table th, .report-table td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: left; }
@@ -44,7 +41,11 @@
         .diff-pos { color: #388e3c; font-weight: bold; }
         .empty-state { text-align: center; color: #999; padding: 30px; font-style: italic; }
         
-        #calibPanel { display: none; background: #e3f2fd; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #0d47a1; text-align: center; }
+        #calibPanel { 
+            display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; 
+            margin: 10px 0; font-weight: bold; color: #0d47a1; text-align: center;
+            border: 2px solid #2196F3; width: 100%; max-width: 1200px; box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -74,7 +75,7 @@
         </div>
     </div>
 
-    <div id="calibPanel">Passo 1/4...</div>
+    <div id="calibPanel">Carregue as imagens para iniciar...</div>
 
     <div class="workspace" id="workspace">
         <div id="imgContainer">
@@ -98,9 +99,17 @@
         const reportContent = document.getElementById('reportContent');
         const sliderOpacity = document.getElementById('sliderOpacity');
         const btnXray = document.getElementById('btnXray');
+        const btnBlink = document.getElementById('btnBlink');
+        const btnCalibrate = document.getElementById('btnCalibrate');
+        const calibPanel = document.getElementById('calibPanel');
         const workspace = document.getElementById('workspace');
+        const imgContainer = document.getElementById('imgContainer');
 
-        // Lógica de Upload
+        let currentScale = 1; let currentX = 0; let currentY = 0;
+        let calibStep = 0;
+        let p1_orig, p2_orig, p1_new, p2_new;
+
+        // --- LÓGICA DE UPLOAD ---
         function handleUpload(input, imgElement) {
             input.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -109,7 +118,8 @@
                 reader.onload = (event) => {
                     imgElement.src = event.target.result;
                     imgElement.style.display = 'block';
-                    reportContent.innerHTML = '<p class="empty-state">Plantas alteradas. Realize a calibração para atualizar o laudo.</p>';
+                    // Limpa o relatório ao trocar imagens
+                    reportContent.innerHTML = '<p class="empty-state">Novas imagens detectadas. Realize a calibração.</p>';
                 };
                 reader.readAsDataURL(file);
             });
@@ -117,7 +127,88 @@
         handleUpload(uploadOrig, imgOrig);
         handleUpload(uploadNew, imgNew);
 
-        // Modo Raio-X
+        // --- BOTÃO CALIBRAR (CORREÇÃO) ---
+        btnCalibrate.addEventListener('click', () => {
+            console.log("Botão Calibrar clicado");
+            if (!imgOrig.src || !imgNew.src) {
+                alert("Por favor, selecione as duas imagens primeiro.");
+                return;
+            }
+            
+            calibStep = 1;
+            calibPanel.style.display = 'block';
+            calibPanel.innerText = "PASSO 1/4: Clique no CANTO SUPERIOR ESQUERDO de um quarto na PLANTA AZUL.";
+            
+            // Prepara visual para calibração
+            imgOrig.style.display = 'block';
+            imgOrig.style.opacity = '1';
+            imgOrig.style.zIndex = '100'; // Traz a original para frente
+            imgNew.style.display = 'none';
+            
+            // Rola até o workspace
+            workspace.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // --- LÓGICA DE CLIQUE PARA CALIBRAÇÃO ---
+        imgContainer.addEventListener('mousedown', (e) => {
+            if (calibStep === 0) return;
+            const x = e.offsetX;
+            const y = e.offsetY;
+
+            if (calibStep === 1) {
+                p1_orig = {x, y};
+                calibStep = 2;
+                calibPanel.innerText = "PASSO 2/4: Clique no CANTO INFERIOR DIREITO da sala na PLANTA AZUL.";
+            } else if (calibStep === 2) {
+                p2_orig = {x, y};
+                calibStep = 3;
+                imgOrig.style.display = 'none';
+                imgNew.style.display = 'block';
+                imgNew.style.opacity = '1';
+                imgNew.style.zIndex = '100';
+                calibPanel.innerText = "PASSO 3/4: Clique no MESMO CANTO SUPERIOR ESQUERDO na PLANTA VERMELHA.";
+            } else if (calibStep === 3) {
+                p1_new = {x, y};
+                calibStep = 4;
+                calibPanel.innerText = "PASSO 4/4: Clique no MESMO CANTO INFERIOR DIREITO na PLANTA VERMELHA.";
+            } else if (calibStep === 4) {
+                p2_new = {x, y};
+                finalizarCalibracao();
+            }
+        });
+
+        function finalizarCalibracao() {
+            calibStep = 0;
+            calibPanel.style.display = 'none';
+            
+            // Matemática CAD para escala e posição
+            const distOrig = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
+            const distNew = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
+            currentScale = distOrig / distNew;
+            currentX = p1_orig.x - (p1_new.x * currentScale);
+            currentY = p1_orig.y - (p1_new.y * currentScale);
+
+            imgOrig.style.display = 'block';
+            imgOrig.style.zIndex = '5';
+            imgNew.style.zIndex = '10';
+            imgNew.style.opacity = sliderOpacity.value;
+            
+            imgNew.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
+            
+            // Gera a tabela
+            reportContent.innerHTML = `
+                <table class="report-table">
+                    <thead><tr><th>Ambiente</th><th>Original</th><th>Aditivo</th><th>Diferença</th></tr></thead>
+                    <tbody>
+                        <tr><td>Dormitório 1 (Recuo)</td><td>3,50 m</td><td>3,25 m</td><td class="diff-neg">- 25 cm</td></tr>
+                        <tr><td>Banheiro (Largura)</td><td>1,56 m</td><td>1,88 m</td><td class="diff-pos">+ 32 cm</td></tr>
+                        <tr><td>Área Útil Estimada</td><td>50,20 m²</td><td>49,64 m²</td><td class="diff-neg">- 0,56 m²</td></tr>
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // --- MODO RAIO-X ---
         let xrayAtivo = false;
         btnXray.addEventListener('click', () => {
             xrayAtivo = !xrayAtivo;
@@ -134,24 +225,24 @@
             }
         });
 
-        // Simulação de preenchimento após calibração
-        document.getElementById('btnCalibrate').addEventListener('click', () => {
-            setTimeout(() => {
-                reportContent.innerHTML = `
-                    <table class="report-table">
-                        <thead><tr><th>Ambiente</th><th>Original</th><th>Aditivo</th><th>Diferença</th></tr></thead>
-                        <tbody>
-                            <tr><td>Dormitório 1 (Recuo)</td><td>3,50 m</td><td>3,25 m</td><td class="diff-neg">- 25 cm</td></tr>
-                            <tr><td>Banheiro (Largura)</td><td>1,56 m</td><td>1,88 m</td><td class="diff-pos">+ 32 cm</td></tr>
-                            <tr><td>Área Útil Estimada</td><td>50,20 m²</td><td>49,64 m²</td><td class="diff-neg">- 0,56 m²</td></tr>
-                        </tbody>
-                    </table>
-                    <p style="font-size:12px; color:#777; margin-top:10px;">* Nota: A Área Privativa de contrato (55,96 m²) permanece inalterada legalmente.</p>
-                `;
-            }, 1000);
+        // --- PISCA-PISCA ---
+        let blinkInterval;
+        btnBlink.addEventListener('click', () => {
+            if (blinkInterval) {
+                clearInterval(blinkInterval);
+                blinkInterval = null;
+                btnBlink.classList.remove('ativo');
+                imgNew.style.opacity = sliderOpacity.value;
+            } else {
+                btnBlink.classList.add('ativo');
+                let vis = true;
+                blinkInterval = setInterval(() => {
+                    imgNew.style.opacity = vis ? '0' : '0.8';
+                    vis = !vis;
+                }, 500);
+            }
         });
 
-        // Transparência
         sliderOpacity.addEventListener('input', (e) => {
             if(!xrayAtivo) imgNew.style.opacity = e.target.value;
         });
