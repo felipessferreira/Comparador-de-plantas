@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Comparador de Plantas</title>
+    <title>Auditoria de Plantas - Sistema de Medição</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
@@ -13,114 +13,177 @@
         }
 
         .main-layout { display: flex; gap: 20px; width: 100%; max-width: 1200px; flex-wrap: wrap; justify-content: center; }
-        .card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        .card { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); flex: 1; min-width: 250px; }
         
-        .btn { padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+        .btn { padding: 12px; border-radius: 5px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; font-size: 14px; }
         .btn-primary { background: #2196F3; color: white; width: 100%; }
-        .btn-xray { background: #9C27B0; color: white; flex: 1; }
-        .btn-blink { background: #FF9800; color: white; flex: 1; }
-        .btn-blink.active { background: #d32f2f; }
+        .btn-success { background: #4CAF50; color: white; width: 100%; }
+        .btn-danger { background: #d32f2f; color: white; width: 100%; }
 
+        /* MODO EMPILHADO */
+        .workspaces-wrapper { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 1200px; margin-top: 20px; }
         .workspace { 
-            position: relative; width: 100%; max-width: 1200px; height: 70vh; 
-            background: #d1d1d1; border: 2px dashed #999; border-radius: 8px; 
-            overflow: auto; margin-top: 20px; 
+            position: relative; width: 100%; height: 50vh; 
+            background: #e0e0e0; border: 2px dashed #999; border-radius: 8px; 
+            overflow: auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
         }
         
-        #imgContainer { position: relative; display: block; transform-origin: 0 0; }
-        #imgOrig, #imgNew { position: absolute; top: 0; left: 0; transform-origin: 0 0; display: block; }
-        #imgNew { z-index: 10; mix-blend-mode: multiply; }
-        #imgOrig { z-index: 5; }
-        
-        /* FILTROS DE COR CORRIGIDOS (Remove fundo amarelo e satura as linhas) */
-        .color-blue { 
-            filter: brightness(1.1) contrast(1.5) grayscale(1) sepia(1) hue-rotate(185deg) saturate(2000%) !important; 
+        .workspace-header {
+            position: sticky; top: 0; left: 0; background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px; margin: 0; font-size: 14px; font-weight: bold; z-index: 100;
+            border-bottom: 1px solid #ccc; border-radius: 8px 8px 0 0;
         }
-        .color-red { 
-            filter: brightness(1.1) contrast(1.5) grayscale(1) sepia(1) hue-rotate(350deg) saturate(2000%) !important; 
-        }
-        
-        .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
-        .xray-new { filter: invert(1) sepia(1) hue-rotate(300deg) saturate(5) !important; mix-blend-mode: difference !important; opacity: 1 !important; }
 
-        .marker { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(0,0,0,0.8); }
+        .img-container { position: relative; display: inline-block; min-width: 100%; min-height: 100%; }
+        .img-container img { display: block; max-width: none; transform-origin: 0 0; }
+        
+        /* FILTROS DE COR */
+        .color-black { filter: grayscale(1) contrast(3) brightness(0.6) !important; }
+        .color-green { filter: grayscale(1) contrast(4) brightness(1.2) sepia(1) hue-rotate(70deg) saturate(1500%) !important; }
 
-        .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid #2196F3; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .marker { position: absolute; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 6px rgba(0,0,0,0.8); }
+
+        /* TABELA E RELATÓRIO */
+        .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid #4CAF50; box-shadow: 0 4px 12px rgba(0,0,0,0.1); box-sizing: border-box; }
         .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         .report-table th, .report-table td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; }
         .report-table th { background: #f8f9fa; color: #666; }
         .diff-neg { color: #d32f2f; font-weight: bold; }
         .diff-pos { color: #388e3c; font-weight: bold; }
-        .row-total { background: #f0f7ff; font-weight: bold; border-top: 2px solid #2196F3; }
+        
+        /* ESTILO DOS CAMPOS EDITÁVEIS */
+        .editable-cell {
+            border-bottom: 1px dashed #2196F3;
+            padding: 2px 5px;
+            min-width: 40px;
+            display: inline-block;
+            cursor: text;
+            outline: none;
+            background: #f8f9fa;
+            border-radius: 3px;
+            transition: 0.2s;
+        }
+        .editable-cell:focus {
+            background: #e3f2fd;
+            border-bottom-color: #0d47a1;
+        }
+
+        /* ESTILO DO TOTALIZADOR */
+        .row-total { background: #f0f7ff; font-weight: bold; }
+        .row-total:first-of-type { border-top: 2px solid #2196F3; }
         
         #calibPanel { display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #0d47a1; text-align: center; border: 2px solid #2196F3; width: 100%; max-width: 1200px; box-sizing: border-box; position: sticky; top: 0; z-index: 200; }
         .empty-state { text-align: center; color: #999; padding: 20px; font-style: italic; }
+
+        /* CONFIGURAÇÕES PARA EXPORTAR PDF */
+        @media print {
+            body { background: #fff; padding: 0; }
+            .no-print { display: none !important; }
+            .report-section { box-shadow: none; border: none; margin-top: 0; padding: 0; }
+            .report-table th { background: #eee !important; -webkit-print-color-adjust: exact; }
+            .row-total { background: #f0f7ff !important; -webkit-print-color-adjust: exact; }
+            .editable-cell { border: none !important; background: transparent !important; padding: 0 !important; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="aviso-legal">
-        ⚠️ <strong>Aviso Importante:</strong> O sistema pode cometer erros. As sobreposições são estimativas visuais e não substituem a planta oficial assinada.
+    <div class="aviso-legal no-print">
+        ⚠️ <strong>Aviso:</strong> O sistema calcula medidas baseadas na calibração do usuário. Use para conferência e laudos informativos.
     </div>
 
-    <div class="main-layout">
+    <div class="main-layout no-print">
         <div class="card">
-            <h3>⚙️ 1. Preparação</h3>
-            <label>Planta Original (Ficará Azul):</label>
-            <input type="file" id="uploadOrig" accept="image/*" style="display:block; margin: 10px 0;">
-            <label>Planta Nova / Aditivo (Ficará Vermelha):</label>
-            <input type="file" id="uploadNew" accept="image/*" style="display:block; margin: 10px 0;">
-            <button id="btnCalibrate" class="btn btn-primary">🎯 Iniciar Calibração de 2 Pontos</button>
+            <h3 style="margin-top:0;">⚙️ 1. Calibração (Escala)</h3>
+            <label style="font-size: 12px;">Planta Original:</label>
+            <input type="file" id="uploadOrig" accept="image/*" style="display:block; margin: 8px 0;">
+            <label style="font-size: 12px;">Planta Aditivo:</label>
+            <input type="file" id="uploadNew" accept="image/*" style="display:block; margin: 8px 0;">
+            <button id="btnCalibrate" class="btn btn-primary" style="margin-top: 10px;">🎯 Definir Escalas (4 Cliques)</button>
         </div>
 
-        <div class="card" style="border-left: 5px solid #9C27B0;">
-            <h3>🔍 2. Análise Visual</h3>
-            <label>Transparência (Vermelha):</label>
-            <input type="range" id="sliderOpacity" min="0" max="1" step="0.01" value="0.55" style="width:100%;">
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button id="btnBlink" class="btn btn-blink">⏱️ Modo Pisca-Pisca</button>
-                <button id="btnXray" class="btn btn-xray">🔬 Modo Raio-X</button>
+        <div class="card" style="border-left: 5px solid #4CAF50;">
+            <h3 style="margin-top:0;">📏 2. Automação</h3>
+            <p style="font-size: 12px; color: #666;">Após calibrar as plantas, clique abaixo para extrair as diferenças de qualquer ambiente.</p>
+            <button id="btnMeasure" class="btn btn-success" style="margin-top: 25px;">➕ Medir Parede/Ambiente</button>
+        </div>
+
+        <div class="card" style="border-left: 5px solid #d32f2f;">
+            <h3 style="margin-top:0;">📄 3. Exportação</h3>
+            <p style="font-size: 12px; color: #666;">Gere um arquivo PDF limpo contendo apenas a tabela com as suas medições finais.</p>
+            <button onclick="window.print()" class="btn btn-danger" style="margin-top: 25px;">🖨️ Exportar Laudo para PDF</button>
+        </div>
+    </div>
+
+    <div id="calibPanel" class="no-print">Aguardando início...</div>
+
+    <div class="workspaces-wrapper no-print">
+        <div class="workspace">
+            <div class="workspace-header" style="color: #000;">Planta Original (Preta)</div>
+            <div class="img-container" id="containerOrig">
+                <img id="imgOrig" style="display:none;">
             </div>
         </div>
-    </div>
-
-    <div id="calibPanel">Aguardando início...</div>
-
-    <div class="workspace" id="workspace">
-        <div id="imgContainer">
-            <img id="imgOrig" style="display:none;">
-            <img id="imgNew" style="display:none;">
+        
+        <div class="workspace">
+            <div class="workspace-header" style="color: #2e7d32;">Planta Aditivo (Verde)</div>
+            <div class="img-container" id="containerNew">
+                <img id="imgNew" style="display:none;">
+            </div>
         </div>
     </div>
 
     <div class="report-section" id="relatorio">
         <h3>📋 Relatório de Alterações</h3>
         <div id="reportContent">
-            <p class="empty-state">Realize a calibração para habilitar o modo de medição dinâmico.</p>
+            <p class="empty-state">Aguardando medições. A tabela gerada aqui será a única coisa visível no PDF.</p>
         </div>
     </div>
 
     <script>
-        // ESTRUTURA DE DADOS VAZIA (Sera preenchida com cliques)
+        // MOTOR DE DADOS DINÂMICO
         let dadosLaudo = [];
-        
-        // VARIÁVEIS DO MOTOR DE MEDIÇÃO
-        let escalaPixelsPorMetro = 0;
-        let calibStep = 0, p1_orig, p2_orig, p1_new, p2_new, activeMarkers = [];
-        let m1_orig, m2_orig, m1_new, m2_new; // Pontos para medição das paredes
+        let scaleOrig = 0; 
+        let scaleNew = 0;  
+
+        // TOTALIZADOR FIXO
+        const totaisLaudo = [
+            { item: "Área Útil Total (Estimada)", original: "~ 50,20 m²", aditivo: "~ 49,64 m²", diff: "- 0,56 m²", classe: "diff-neg" },
+            { item: "Área Privativa (Contrato)", original: "55,96 m²", aditivo: "55,96 m²", diff: "Inalterada", classe: "" }
+        ];
 
         const uploadOrig = document.getElementById('uploadOrig');
         const uploadNew = document.getElementById('uploadNew');
         const imgOrig = document.getElementById('imgOrig');
         const imgNew = document.getElementById('imgNew');
+        const containerOrig = document.getElementById('containerOrig');
+        const containerNew = document.getElementById('containerNew');
         const calibPanel = document.getElementById('calibPanel');
-        const imgContainer = document.getElementById('imgContainer');
-        const workspace = document.getElementById('workspace');
         const reportContent = document.getElementById('reportContent');
 
+        let mode = 0; 
+        let step = 0;
+        let p1_orig, p2_orig, p1_new, p2_new; 
+        let m1_orig, m2_orig, m1_new, m2_new; 
+        let activeMarkers = [];
+
+        // FUNÇÃO PARA ATUALIZAR DADOS APÓS EDIÇÃO MANUAL
+        function atualizarMedida(index, campo, valorTexto) {
+            // Converte vírgula para ponto e remove letras, garantindo que seja um número
+            let valorNumerico = parseFloat(valorTexto.replace(',', '.').replace(/[^\d.-]/g, ''));
+            
+            if (!isNaN(valorNumerico)) {
+                dadosLaudo[index][campo] = valorNumerico;
+                // Recalcula a diferença
+                dadosLaudo[index].diff = dadosLaudo[index].aditivo - dadosLaudo[index].original;
+            }
+            renderizarTabela(); // Atualiza a tela com o novo cálculo
+        }
+
+        // RENDERIZAÇÃO DA TABELA (AGORA EDITÁVEL)
         function renderizarTabela() {
             if (dadosLaudo.length === 0) {
-                reportContent.innerHTML = '<p class="empty-state">Nenhuma medida registrada. Siga as instruções do painel azul acima da imagem.</p>';
+                reportContent.innerHTML = '<p class="empty-state">Nenhuma medida registrada.</p>';
                 return;
             }
 
@@ -128,22 +191,48 @@
                 <thead><tr><th>Ambiente / Parede Afetada</th><th>Projeto Original</th><th>Novo Aditivo</th><th>Diferença</th></tr></thead>
                 <tbody>`;
             
-            dadosLaudo.forEach(row => {
-                html += `<tr><td>${row.item}</td><td>${row.original}</td><td>${row.aditivo}</td><td class="${row.classe}">${row.diff}</td></tr>`;
+            dadosLaudo.forEach((row, index) => {
+                let diffClass = row.diff < -0.01 ? 'diff-neg' : (row.diff > 0.01 ? 'diff-pos' : '');
+                let diffText = row.diff === 0 ? '0 cm' : `${row.diff > 0 ? '+' : ''}${(row.diff * 100).toFixed(0)} cm`;
+                
+                // Campos Original e Aditivo agora possuem SPANs editáveis com onblur
+                html += `<tr>
+                    <td>${row.item}</td>
+                    <td><span class="editable-cell" contenteditable="true" onblur="atualizarMedida(${index}, 'original', this.innerText)">${row.original.toFixed(2)}</span> m</td>
+                    <td><span class="editable-cell" contenteditable="true" onblur="atualizarMedida(${index}, 'aditivo', this.innerText)">${row.aditivo.toFixed(2)}</span> m</td>
+                    <td class="${diffClass}">${diffText}</td>
+                </tr>`;
             });
 
-            html += `</tbody></table><p style="font-size: 12px; color: #666; margin-top: 15px; font-style: italic;">* Nota: Valores medidos dinamicamente face a face das paredes.</p>`;
+            totaisLaudo.forEach(row => {
+                html += `<tr class="row-total">
+                    <td>${row.item}</td>
+                    <td>${row.original}</td>
+                    <td>${row.aditivo}</td>
+                    <td class="${row.classe}">${row.diff}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table><p style="font-size: 12px; color: #666; margin-top: 15px; font-style: italic;">* Nota: Clique sobre os valores das paredes medidas para fazer ajustes manuais finos. A diferença é calculada automaticamente.</p>`;
             reportContent.innerHTML = html;
         }
 
-        function createMarker(x, y, color) {
+        function createMarker(container, x, y, color) {
             const m = document.createElement('div');
             m.className = 'marker'; m.style.left = x + 'px'; m.style.top = y + 'px'; m.style.backgroundColor = color;
-            imgContainer.appendChild(m); activeMarkers.push(m);
+            container.appendChild(m); activeMarkers.push(m);
         }
 
         function clearMarkers() {
             activeMarkers.forEach(m => m.remove()); activeMarkers = [];
+        }
+
+        function updatePanel(text, color, bg, border) {
+            calibPanel.style.display = 'block';
+            calibPanel.innerText = text;
+            calibPanel.style.color = color;
+            calibPanel.style.background = bg;
+            calibPanel.style.borderColor = border;
         }
 
         function handleUpload(input, imgElement) {
@@ -154,11 +243,6 @@
                 reader.onload = (event) => {
                     imgElement.src = event.target.result;
                     imgElement.style.display = 'block';
-                    imgElement.style.transform = 'none';
-                    imgElement.onload = () => {
-                        imgContainer.style.width = imgElement.naturalWidth + 'px';
-                        imgContainer.style.height = imgElement.naturalHeight + 'px';
-                    };
                 };
                 reader.readAsDataURL(file);
             });
@@ -166,143 +250,107 @@
         handleUpload(uploadOrig, imgOrig);
         handleUpload(uploadNew, imgNew);
 
+        // --- BOTÃO 1: CALIBRAÇÃO DE ESCALAS ---
         document.getElementById('btnCalibrate').addEventListener('click', () => {
-            if (!imgOrig.src || !imgNew.src) return alert("Selecione os arquivos primeiro.");
-            calibStep = 1; clearMarkers(); dadosLaudo = []; renderizarTabela();
-            calibPanel.style.display = 'block';
-            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL (Original).";
-            imgOrig.style.display = 'block'; imgOrig.style.opacity = '1'; imgOrig.classList.remove('color-blue');
-            imgNew.style.display = 'none';
+            if (!imgOrig.src || !imgNew.src) return alert("Suba os dois arquivos primeiro.");
+            mode = 1; step = 1; clearMarkers(); dadosLaudo = []; renderizarTabela();
+            
+            imgOrig.classList.add('color-black');
+            imgNew.classList.add('color-green');
+
+            updatePanel("CALIBRAÇÃO 1/4: Clique no 1º PONTO de uma parede conhecida na PLANTA ORIGINAL (Cima).", '#0d47a1', '#e3f2fd', '#2196F3');
         });
 
-        // MOTOR DE CLIQUES HÍBRIDO (Calibração + Medição Automática)
-        imgContainer.addEventListener('mousedown', (e) => {
-            if (calibStep === 0) return;
-            const rect = imgContainer.getBoundingClientRect();
-            const x = e.pageX - (rect.left + window.scrollX);
-            const y = e.pageY - (rect.top + window.scrollY);
+        // --- BOTÃO 2: MEDIÇÃO AUTOMÁTICA ---
+        document.getElementById('btnMeasure').addEventListener('click', () => {
+            if (scaleOrig === 0 || scaleNew === 0) return alert("Realize a Calibração (Passo 1) primeiro.");
+            mode = 2; step = 1; clearMarkers();
+            
+            updatePanel("MEDIÇÃO 1/4: Clique no INÍCIO da parede na PLANTA ORIGINAL (Cima).", '#1b5e20', '#e8f5e9', '#4CAF50');
+        });
 
-            // --- FASE 1: ALINHAMENTO ---
-            if (calibStep === 1) {
-                p1_orig = {x, y}; createMarker(x, y, '#2196F3');
-                calibStep = 2; calibPanel.innerText = "PASSO 2/4: Clique no 2º PONTO na PLANTA AZUL.";
-            } else if (calibStep === 2) {
-                p2_orig = {x, y}; createMarker(x, y, '#2196F3');
-                calibStep = 3;
-                const sT = workspace.scrollTop, sL = workspace.scrollLeft;
-                imgOrig.style.display = 'none'; imgNew.style.display = 'block'; imgNew.style.opacity = '1';
-                workspace.scrollTop = sT; workspace.scrollLeft = sL;
-                calibPanel.innerText = "PASSO 3/4: Clique no MESMO 1º PONTO na PLANTA VERMELHA (Nova).";
-            } else if (calibStep === 3) {
-                p1_new = {x, y}; createMarker(x, y, '#f44336');
-                calibStep = 4; calibPanel.innerText = "PASSO 4/4: Clique no MESMO 2º PONTO na PLANTA VERMELHA.";
-            } else if (calibStep === 4) {
-                p2_new = {x, y}; createMarker(x, y, '#f44336');
-                setTimeout(finalizarAlinhamento, 300);
-            } 
-            // --- FASE 2: MEDIÇÃO DINÂMICA ---
-            else if (calibStep === 5) {
-                m1_orig = {x, y}; createMarker(x, y, '#000'); // Marcador de medida
-                calibStep = 6; calibPanel.innerText = "MEDIÇÃO 2/4: Clique no FIM da parede na PLANTA AZUL.";
-            } else if (calibStep === 6) {
-                m2_orig = {x, y}; createMarker(x, y, '#000');
-                calibStep = 7; 
-                imgOrig.style.opacity = '0.1'; imgNew.style.opacity = '1'; // Destaca a vermelha
-                calibPanel.innerText = "MEDIÇÃO 3/4: Clique no INÍCIO correspondente na PLANTA VERMELHA.";
-            } else if (calibStep === 7) {
-                m1_new = {x, y}; createMarker(x, y, '#000');
-                calibStep = 8; calibPanel.innerText = "MEDIÇÃO 4/4: Clique no FIM correspondente na PLANTA VERMELHA.";
-            } else if (calibStep === 8) {
-                m2_new = {x, y}; createMarker(x, y, '#000');
-                setTimeout(processarMedicao, 300);
+        // --- CLIQUES NA PLANTA ORIGINAL (CIMA) ---
+        containerOrig.addEventListener('mousedown', (e) => {
+            if (mode === 0) return;
+            const x = e.pageX - (containerOrig.getBoundingClientRect().left + window.scrollX);
+            const y = e.pageY - (containerOrig.getBoundingClientRect().top + window.scrollY);
+
+            if (mode === 1) { // Calibrando
+                if (step === 1) { p1_orig = {x, y}; createMarker(containerOrig, x, y, '#2196F3'); step = 2; updatePanel("CALIBRAÇÃO 2/4: Clique no 2º PONTO na PLANTA ORIGINAL (Cima).", '#0d47a1', '#e3f2fd', '#2196F3'); }
+                else if (step === 2) { p2_orig = {x, y}; createMarker(containerOrig, x, y, '#2196F3'); step = 3; updatePanel("CALIBRAÇÃO 3/4: Clique no MESMO 1º PONTO na PLANTA ADITIVO (Baixo).", '#0d47a1', '#e3f2fd', '#2196F3'); }
+            } else if (mode === 2) { // Medindo
+                if (step === 1) { m1_orig = {x, y}; createMarker(containerOrig, x, y, '#000'); step = 2; updatePanel("MEDIÇÃO 2/4: Clique no FIM da parede na PLANTA ORIGINAL (Cima).", '#1b5e20', '#e8f5e9', '#4CAF50'); }
+                else if (step === 2) { m2_orig = {x, y}; createMarker(containerOrig, x, y, '#000'); step = 3; updatePanel("MEDIÇÃO 3/4: Clique no INÍCIO da mesma parede na PLANTA ADITIVO (Baixo).", '#1b5e20', '#e8f5e9', '#4CAF50'); }
             }
         });
 
-        function finalizarAlinhamento() {
-            calibPanel.style.display = 'none';
-            clearMarkers();
-            const dO = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
-            const dN = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
-            const scale = dO / dN;
-            const tX = p1_orig.x - (p1_new.x * scale);
-            const tY = p1_orig.y - (p1_new.y * scale);
+        // --- CLIQUES NA PLANTA ADITIVO (BAIXO) ---
+        containerNew.addEventListener('mousedown', (e) => {
+            if (mode === 0) return;
+            const x = e.pageX - (containerNew.getBoundingClientRect().left + window.scrollX);
+            const y = e.pageY - (containerNew.getBoundingClientRect().top + window.scrollY);
 
-            imgOrig.style.display = 'block'; 
-            imgOrig.classList.add('color-blue'); 
-            imgNew.classList.add('color-red');   
-            
-            imgNew.style.transform = `translate(${tX}px, ${tY}px) scale(${scale})`;
-            imgNew.style.opacity = document.getElementById('sliderOpacity').value;
-
-            // Coleta a escala real para habilitar as medições
-            setTimeout(() => {
-                let distReal = prompt("🎯 Alinhamento Concluído!\n\nPara automatizar as medidas, digite a distância real (em metros) entre os dois pontos que você acabou de calibrar (Ex: 3.50):", "3.50");
-                
-                if (distReal && !isNaN(parseFloat(distReal))) {
-                    escalaPixelsPorMetro = dO / parseFloat(distReal);
-                    calibStep = 5; // Muda para o modo de medição
-                    calibPanel.style.display = 'block';
-                    calibPanel.style.background = '#e8f5e9'; calibPanel.style.color = '#1b5e20'; calibPanel.style.borderColor = '#4CAF50';
-                    calibPanel.innerText = "📏 MODO MEDIÇÃO ATIVADO: Clique no INÍCIO de uma parede na PLANTA AZUL.";
-                    renderizarTabela();
-                } else {
-                    calibStep = 0;
-                    alert("Escala não informada. A tabela automática não funcionará.");
+            if (mode === 1) { // Calibrando
+                if (step === 3) { p1_new = {x, y}; createMarker(containerNew, x, y, '#f44336'); step = 4; updatePanel("CALIBRAÇÃO 4/4: Clique no MESMO 2º PONTO na PLANTA ADITIVO (Baixo).", '#0d47a1', '#e3f2fd', '#2196F3'); }
+                else if (step === 4) { 
+                    p2_new = {x, y}; createMarker(containerNew, x, y, '#f44336'); 
+                    setTimeout(finalizarCalibracao, 300); 
                 }
-            }, 300);
+            } else if (mode === 2) { // Medindo
+                if (step === 3) { m1_new = {x, y}; createMarker(containerNew, x, y, '#4CAF50'); step = 4; updatePanel("MEDIÇÃO 4/4: Clique no FIM da mesma parede na PLANTA ADITIVO (Baixo).", '#1b5e20', '#e8f5e9', '#4CAF50'); }
+                else if (step === 4) { 
+                    m2_new = {x, y}; createMarker(containerNew, x, y, '#4CAF50'); 
+                    setTimeout(processarMedicao, 300); 
+                }
+            }
+        });
+
+        function finalizarCalibracao() {
+            calibPanel.style.display = 'none'; clearMarkers(); mode = 0; step = 0;
+
+            const distPxOrig = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
+            const distPxNew = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
+
+            setTimeout(() => {
+                let distReal = prompt("🎯 Calibração Pronta!\n\nDigite a distância real (em metros) da parede que você clicou (Ex: 3.50):", "3.50");
+                if (distReal && !isNaN(parseFloat(distReal.replace(',','.')))) {
+                    const metros = parseFloat(distReal.replace(',','.'));
+                    scaleOrig = distPxOrig / metros;
+                    scaleNew = distPxNew / metros; 
+                    alert(`✅ Escalas configuradas!\nVocê já pode usar o botão "Medir Parede/Ambiente".`);
+                } else {
+                    alert("Distância inválida. Calibração cancelada.");
+                }
+            }, 100);
         }
 
         function processarMedicao() {
-            // Restaura visual
-            imgOrig.style.opacity = '1';
-            imgNew.style.opacity = document.getElementById('sliderOpacity').value;
-            clearMarkers();
+            calibPanel.style.display = 'none'; clearMarkers(); mode = 0; step = 0;
 
-            // Matemática
             const pxOrig = Math.hypot(m2_orig.x - m1_orig.x, m2_orig.y - m1_orig.y);
             const pxNew = Math.hypot(m2_new.x - m1_new.x, m2_new.y - m1_new.y);
             
-            const metroOrig = pxOrig / escalaPixelsPorMetro;
-            const metroNew = pxNew / escalaPixelsPorMetro;
-            const diffMetro = metroNew - metroOrig;
-            const diffCm = Math.round(diffMetro * 100);
+            const metroOrig = pxOrig / scaleOrig;
+            const metroNew = pxNew / scaleNew;
+            const diferenca = metroNew - metroOrig;
 
-            // Interface
-            let nomeAmbiente = prompt(`📐 Medida Calculada:\nOriginal: ${metroOrig.toFixed(2)}m | Aditivo: ${metroNew.toFixed(2)}m\n\nDigite o nome desta parede/ambiente para adicionar à tabela:`, "Novo Ambiente");
-
-            if (nomeAmbiente) {
-                let diffClass = diffCm < 0 ? 'diff-neg' : (diffCm > 0 ? 'diff-pos' : '');
-                let diffText = diffCm > 0 ? `+ ${diffCm} cm` : (diffCm === 0 ? `0 cm` : `- ${Math.abs(diffCm)} cm`);
-
-                dadosLaudo.push({
-                    item: nomeAmbiente,
-                    original: metroOrig.toFixed(2) + " m",
-                    aditivo: metroNew.toFixed(2) + " m",
-                    diff: diffText,
-                    classe: diffClass
-                });
-                renderizarTabela();
-            }
-
-            // Loop contínuo: volta para o passo 5 para permitir medir a próxima parede
-            calibStep = 5;
-            calibPanel.innerText = "📏 MODO MEDIÇÃO: Clique no INÍCIO de uma NOVA PAREDE na PLANTA AZUL.";
+            setTimeout(() => {
+                let nome = prompt(`📐 Medida Calculada!\n\nNome da parede/ambiente para adicionar ao laudo:`, "Novo Ambiente");
+                if (nome) {
+                    dadosLaudo.push({
+                        item: nome,
+                        original: metroOrig,
+                        aditivo: metroNew,
+                        diff: diferenca
+                    });
+                    renderizarTabela();
+                    
+                    // Loop para continuar medindo
+                    mode = 2; step = 1;
+                    updatePanel("📏 MODO MEDIÇÃO: Clique no INÍCIO de uma NOVA PAREDE na PLANTA ORIGINAL (Cima).", '#1b5e20', '#e8f5e9', '#4CAF50');
+                }
+            }, 100);
         }
-
-        let xray = false;
-        document.getElementById('btnXray').addEventListener('click', () => {
-            xray = !xray;
-            if(xray) { imgOrig.classList.add('xray-orig'); imgNew.classList.add('xray-new'); workspace.style.background = '#121212'; }
-            else { imgOrig.classList.remove('xray-orig'); imgNew.classList.remove('xray-new'); workspace.style.background = '#d1d1d1'; }
-        });
-
-        let blink = null;
-        document.getElementById('btnBlink').addEventListener('click', function() {
-            if(blink) { clearInterval(blink); blink = null; this.classList.remove('active'); imgNew.style.opacity = document.getElementById('sliderOpacity').value; }
-            else { this.classList.add('active'); let v = true; blink = setInterval(() => { imgNew.style.opacity = v ? '0' : '0.8'; v = !v; }, 500); }
-        });
-        
-        document.getElementById('sliderOpacity').addEventListener('input', (e) => { if(!xray) imgNew.style.opacity = e.target.value; });
     </script>
 </body>
 </html>
