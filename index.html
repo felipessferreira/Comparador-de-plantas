@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Comparador de Plantas Dinâmico</title>
+    <title>Comparador de Plantas</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
@@ -34,14 +34,19 @@
         #imgNew { z-index: 10; mix-blend-mode: multiply; }
         #imgOrig { z-index: 5; }
         
-        /* FILTROS DE COR (BLINDADOS CONTRA FUNDO AMARELO) */
-        .color-blue { filter: grayscale(1) invert(1) sepia(1) hue-rotate(185deg) saturate(1000%) invert(1) contrast(1.4) !important; }
-        .color-red { filter: grayscale(1) invert(1) sepia(1) hue-rotate(330deg) saturate(1000%) invert(1) contrast(1.4) !important; }
+        /* FILTROS DE COR CORRIGIDOS */
+        /* Neutraliza o amarelo e aplica a cor nas linhas pretas */
+        .color-blue { 
+            filter: grayscale(1) brightness(0.9) sepia(1) hue-rotate(185deg) saturate(1000%) contrast(1.2) !important; 
+        }
+        .color-red { 
+            filter: grayscale(1) brightness(0.9) sepia(1) hue-rotate(340deg) saturate(1000%) contrast(1.2) !important; 
+        }
         
         .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
         .xray-new { filter: invert(1) sepia(1) hue-rotate(300deg) saturate(5) !important; mix-blend-mode: difference !important; opacity: 1 !important; }
 
-        .marker { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(0,0,0,0.8); }
+        .marker { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(0,0,0,0.8); }
 
         /* TABELA DINÂMICA */
         .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid #2196F3; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -65,16 +70,16 @@
     <div class="main-layout">
         <div class="card">
             <h3>⚙️ 1. Preparação</h3>
-            <label>Planta Original (Base Azul):</label>
+            <label>Planta Original (Ficará Azul):</label>
             <input type="file" id="uploadOrig" accept="image/*" style="display:block; margin: 10px 0;">
-            <label>Planta Nova (Aditivo Vermelho):</label>
+            <label>Planta Nova / Aditivo (Ficará Vermelha):</label>
             <input type="file" id="uploadNew" accept="image/*" style="display:block; margin: 10px 0;">
             <button id="btnCalibrate" class="btn btn-primary">🎯 Iniciar Calibração de 2 Pontos</button>
         </div>
 
         <div class="card" style="border-left: 5px solid #9C27B0;">
             <h3>🔍 2. Análise Visual</h3>
-            <label>Transparência:</label>
+            <label>Transparência (Vermelha):</label>
             <input type="range" id="sliderOpacity" min="0" max="1" step="0.01" value="0.55" style="width:100%;">
             <div style="display:flex; gap:10px; margin-top:15px;">
                 <button id="btnBlink" class="btn btn-blink">⏱️ Modo Pisca-Pisca</button>
@@ -100,7 +105,7 @@
     </div>
 
     <script>
-        // ESTRUTURA DE DADOS DINÂMICA
+        // ESTRUTURA DE DADOS DINÂMICA (Ajuste aqui os valores conforme necessário)
         const dadosLaudo = [
             { item: "Dormitório 1 - Parede Recuo (Armário)", original: "3,50 m", aditivo: "3,25 m", diff: "- 25 cm", classe: "diff-neg" },
             { item: "Dormitório 1 - Parede Janela", original: "3,70 m", aditivo: "3,60 m", diff: "- 10 cm", classe: "diff-neg" },
@@ -159,6 +164,7 @@
                 reader.onload = (event) => {
                     imgElement.src = event.target.result;
                     imgElement.style.display = 'block';
+                    imgElement.style.transform = 'none';
                     imgElement.onload = () => {
                         imgContainer.style.width = imgElement.naturalWidth + 'px';
                         imgContainer.style.height = imgElement.naturalHeight + 'px';
@@ -171,10 +177,10 @@
         handleUpload(uploadNew, imgNew);
 
         document.getElementById('btnCalibrate').addEventListener('click', () => {
-            if (!imgOrig.src || !imgNew.src) return alert("Suba os arquivos primeiro.");
+            if (!imgOrig.src || !imgNew.src) return alert("Selecione os arquivos primeiro.");
             calibStep = 1; activeMarkers.forEach(m => m.remove()); activeMarkers = [];
             calibPanel.style.display = 'block';
-            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL.";
+            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL (Original).";
             imgOrig.style.display = 'block'; imgOrig.style.opacity = '1'; imgOrig.classList.remove('color-blue');
             imgNew.style.display = 'none';
         });
@@ -194,7 +200,7 @@
                 const sT = workspace.scrollTop, sL = workspace.scrollLeft;
                 imgOrig.style.display = 'none'; imgNew.style.display = 'block'; imgNew.style.opacity = '1';
                 workspace.scrollTop = sT; workspace.scrollLeft = sL;
-                calibPanel.innerText = "PASSO 3/4: Clique no MESMO 1º PONTO na PLANTA VERMELHA.";
+                calibPanel.innerText = "PASSO 3/4: Clique no MESMO 1º PONTO na PLANTA VERMELHA (Nova).";
             } else if (calibStep === 3) {
                 p1_new = {x, y}; createMarker(x, y, '#f44336');
                 calibStep = 4; calibPanel.innerText = "PASSO 4/4: Clique no MESMO 2º PONTO na PLANTA VERMELHA.";
@@ -213,8 +219,11 @@
             const tX = p1_orig.x - (p1_new.x * scale);
             const tY = p1_orig.y - (p1_new.y * scale);
 
-            imgOrig.style.display = 'block'; imgOrig.classList.add('color-blue');
-            imgNew.classList.add('color-red');
+            // APLICAÇÃO DAS CORES CORRIGIDAS
+            imgOrig.style.display = 'block'; 
+            imgOrig.classList.add('color-blue'); // Planta Base = Azul
+            imgNew.classList.add('color-red');   // Planta Aditivo = Vermelha
+            
             imgNew.style.transform = `translate(${tX}px, ${tY}px) scale(${scale})`;
             imgNew.style.opacity = document.getElementById('sliderOpacity').value;
 
