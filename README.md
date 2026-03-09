@@ -1,7 +1,3 @@
-Aqui está uma proposta de **README.md** completa e profissional para o seu repositório. Este arquivo explica a lógica por trás da ferramenta, como utilizá-la e ressalta os pontos técnicos importantes sobre o seu caso específico.
-
----
-
 # 🏗️ Comparador de Plantas CAD (Análise de Aditivo)
 
 Este projeto é uma ferramenta web estática e segura projetada para realizar a sobreposição e comparação visual entre duas plantas de imóveis (original vs. aditivo). Ela foi desenvolvida para identificar alterações milimétricas em projetos de apartamentos, utilizando calibração por pontos para ignorar variações de escala em arquivos PDF/Imagens.
