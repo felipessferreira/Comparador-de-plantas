@@ -6,7 +6,6 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
-        /* AVISO DE RESPONSABILIDADE */
         .aviso-legal {
             background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
             padding: 15px 20px; border-radius: 6px; max-width: 1100px; width: 100%;
@@ -22,7 +21,6 @@
         .btn-blink { background: #FF9800; color: white; flex: 1; }
         .btn-blink.active { background: #d32f2f; }
 
-        /* AREA DE DESENHO (WORKSPACE) */
         .workspace { 
             position: relative; width: 100%; max-width: 1200px; height: 70vh; 
             background: #d1d1d1; border: 2px dashed #999; border-radius: 8px; 
@@ -34,13 +32,12 @@
         #imgNew { z-index: 10; mix-blend-mode: multiply; }
         #imgOrig { z-index: 5; }
         
-        /* FILTROS DE COR CORRIGIDOS */
-        /* Neutraliza o amarelo e aplica a cor nas linhas pretas */
+        /* FILTROS DE COR CORRIGIDOS (Remove fundo amarelo e satura as linhas) */
         .color-blue { 
-            filter: grayscale(1) brightness(0.9) sepia(1) hue-rotate(185deg) saturate(1000%) contrast(1.2) !important; 
+            filter: brightness(1.1) contrast(1.5) grayscale(1) sepia(1) hue-rotate(185deg) saturate(2000%) !important; 
         }
         .color-red { 
-            filter: grayscale(1) brightness(0.9) sepia(1) hue-rotate(340deg) saturate(1000%) contrast(1.2) !important; 
+            filter: brightness(1.1) contrast(1.5) grayscale(1) sepia(1) hue-rotate(350deg) saturate(2000%) !important; 
         }
         
         .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
@@ -48,7 +45,6 @@
 
         .marker { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(0,0,0,0.8); }
 
-        /* TABELA DINÂMICA */
         .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid #2196F3; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         .report-table th, .report-table td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; }
@@ -105,7 +101,7 @@
     </div>
 
     <script>
-        // ESTRUTURA DE DADOS DINÂMICA (Ajuste aqui os valores conforme necessário)
+        // ESTRUTURA DE DADOS DINÂMICA
         const dadosLaudo = [
             { item: "Dormitório 1 - Parede Recuo (Armário)", original: "3,50 m", aditivo: "3,25 m", diff: "- 25 cm", classe: "diff-neg" },
             { item: "Dormitório 1 - Parede Janela", original: "3,70 m", aditivo: "3,60 m", diff: "- 10 cm", classe: "diff-neg" },
@@ -219,10 +215,9 @@
             const tX = p1_orig.x - (p1_new.x * scale);
             const tY = p1_orig.y - (p1_new.y * scale);
 
-            // APLICAÇÃO DAS CORES CORRIGIDAS
             imgOrig.style.display = 'block'; 
-            imgOrig.classList.add('color-blue'); // Planta Base = Azul
-            imgNew.classList.add('color-red');   // Planta Aditivo = Vermelha
+            imgOrig.classList.add('color-blue'); 
+            imgNew.classList.add('color-red');   
             
             imgNew.style.transform = `translate(${tX}px, ${tY}px) scale(${scale})`;
             imgNew.style.opacity = document.getElementById('sliderOpacity').value;
