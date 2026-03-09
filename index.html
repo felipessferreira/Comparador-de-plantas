@@ -2,10 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Comparador de Plantas - Ultra Precisão</title>
+    <title>Comparador de Plantas Dinâmico</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         
+        /* AVISO DE RESPONSABILIDADE */
         .aviso-legal {
             background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
             padding: 15px 20px; border-radius: 6px; max-width: 1100px; width: 100%;
@@ -19,7 +20,9 @@
         .btn-primary { background: #2196F3; color: white; width: 100%; }
         .btn-xray { background: #9C27B0; color: white; flex: 1; }
         .btn-blink { background: #FF9800; color: white; flex: 1; }
+        .btn-blink.active { background: #d32f2f; }
 
+        /* AREA DE DESENHO (WORKSPACE) */
         .workspace { 
             position: relative; width: 100%; max-width: 1200px; height: 70vh; 
             background: #d1d1d1; border: 2px dashed #999; border-radius: 8px; 
@@ -27,41 +30,36 @@
         }
         
         #imgContainer { position: relative; display: block; transform-origin: 0 0; }
-        
-        #imgOrig, #imgNew { 
-            position: absolute; top: 0; left: 0; 
-            transform-origin: 0 0; /* CRUCIAL PARA O ALINHAMENTO */
-            display: block; 
-        }
-        
+        #imgOrig, #imgNew { position: absolute; top: 0; left: 0; transform-origin: 0 0; display: block; }
         #imgNew { z-index: 10; mix-blend-mode: multiply; }
         #imgOrig { z-index: 5; }
         
-        /* FILTROS DE COR "BLINDADOS" - Ignoram o fundo amarelo */
-        .color-blue { 
-            filter: grayscale(1) invert(1) sepia(1) hue-rotate(180deg) saturate(1000%) invert(1) contrast(1.5) !important; 
-        }
-        .color-red { 
-            filter: grayscale(1) invert(1) sepia(1) hue-rotate(330deg) saturate(1000%) invert(1) contrast(1.5) !important; 
-        }
+        /* FILTROS DE COR (BLINDADOS CONTRA FUNDO AMARELO) */
+        .color-blue { filter: grayscale(1) invert(1) sepia(1) hue-rotate(185deg) saturate(1000%) invert(1) contrast(1.4) !important; }
+        .color-red { filter: grayscale(1) invert(1) sepia(1) hue-rotate(330deg) saturate(1000%) invert(1) contrast(1.4) !important; }
         
         .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
         .xray-new { filter: invert(1) sepia(1) hue-rotate(300deg) saturate(5) !important; mix-blend-mode: difference !important; opacity: 1 !important; }
 
-        .marker { position: absolute; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(0,0,0,0.8); }
+        .marker { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(0,0,0,0.8); }
 
-        .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid #2196F3; }
+        /* TABELA DINÂMICA */
+        .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; border-top: 5px solid #2196F3; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        .report-table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .report-table th, .report-table td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; }
+        .report-table th { background: #f8f9fa; color: #666; }
         .diff-neg { color: #d32f2f; font-weight: bold; }
+        .diff-pos { color: #388e3c; font-weight: bold; }
+        .row-total { background: #f0f7ff; font-weight: bold; border-top: 2px solid #2196F3; }
         
         #calibPanel { display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #0d47a1; text-align: center; border: 2px solid #2196F3; width: 100%; max-width: 1200px; box-sizing: border-box; position: sticky; top: 0; z-index: 200; }
+        .empty-state { text-align: center; color: #999; padding: 20px; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="aviso-legal">
-        ⚠️ <strong>Aviso:</strong> Sistema de sobreposição para análise visual. Não substitui a planta oficial.
+        ⚠️ <strong>Aviso Importante:</strong> O sistema pode cometer erros. As sobreposições são estimativas visuais e não substituem a planta oficial assinada.
     </div>
 
     <div class="main-layout">
@@ -74,7 +72,7 @@
             <button id="btnCalibrate" class="btn btn-primary">🎯 Iniciar Calibração de 2 Pontos</button>
         </div>
 
-        <div class="card">
+        <div class="card" style="border-left: 5px solid #9C27B0;">
             <h3>🔍 2. Análise Visual</h3>
             <label>Transparência:</label>
             <input type="range" id="sliderOpacity" min="0" max="1" step="0.01" value="0.55" style="width:100%;">
@@ -85,7 +83,7 @@
         </div>
     </div>
 
-    <div id="calibPanel">Aguardando...</div>
+    <div id="calibPanel">Aguardando início...</div>
 
     <div class="workspace" id="workspace">
         <div id="imgContainer">
@@ -95,11 +93,30 @@
     </div>
 
     <div class="report-section" id="relatorio">
-        <h3>📋 Laudo de Alterações: Unidade 5706</h3>
-        <div id="reportContent"><p style="color:#999; text-align:center;">Realize a calibração para gerar os dados.</p></div>
+        <h3>📋 Relatório de Alterações</h3>
+        <div id="reportContent">
+            <p class="empty-state">Realize a calibração para gerar os dados comparativos.</p>
+        </div>
     </div>
 
     <script>
+        // ESTRUTURA DE DADOS DINÂMICA
+        const dadosLaudo = [
+            { item: "Dormitório 1 - Parede Recuo (Armário)", original: "3,50 m", aditivo: "3,25 m", diff: "- 25 cm", classe: "diff-neg" },
+            { item: "Dormitório 1 - Parede Janela", original: "3,70 m", aditivo: "3,60 m", diff: "- 10 cm", classe: "diff-neg" },
+            { item: "Dormitório 1 - Profundidade Recuo", original: "1,70 m", aditivo: "1,60 m", diff: "- 10 cm", classe: "diff-neg" },
+            { item: "Banheiro - Largura Interna", original: "1,56 m", aditivo: "1,88 m", diff: "+ 32 cm", classe: "diff-pos" },
+            { item: "Banheiro - Profundidade Interna", original: "1,90 m", aditivo: "1,78 m", diff: "- 12 cm", classe: "diff-neg" },
+            { item: "Varanda / Terraço - Largura", original: "2,46 m", aditivo: "2,41 m", diff: "- 5 cm", classe: "diff-neg" },
+            { item: "Varanda / Terraço - Profundidade", original: "1,34 m", aditivo: "1,29 m", diff: "- 5 cm", classe: "diff-neg" },
+            { item: "Área de Serviço (A.S.) - Largura", original: "1,50 m", aditivo: "1,48 m", diff: "- 2 cm", classe: "diff-neg" }
+        ];
+
+        const totaisLaudo = [
+            { item: "Área Útil Total (Estimada)", original: "~ 50,20 m²", aditivo: "~ 49,64 m²", diff: "- 0,56 m²", classe: "diff-neg" },
+            { item: "Área Privativa (Contrato)", original: "55,96 m²", aditivo: "55,96 m²", diff: "Inalterada", classe: "" }
+        ];
+
         const uploadOrig = document.getElementById('uploadOrig');
         const uploadNew = document.getElementById('uploadNew');
         const imgOrig = document.getElementById('imgOrig');
@@ -107,16 +124,31 @@
         const calibPanel = document.getElementById('calibPanel');
         const imgContainer = document.getElementById('imgContainer');
         const workspace = document.getElementById('workspace');
+        const reportContent = document.getElementById('reportContent');
 
         let calibStep = 0, p1_orig, p2_orig, p1_new, p2_new, activeMarkers = [];
 
+        function renderizarTabela() {
+            let html = `<table class="report-table">
+                <thead><tr><th>Ambiente / Parede Afetada</th><th>Projeto Original</th><th>Novo Aditivo</th><th>Diferença</th></tr></thead>
+                <tbody>`;
+            
+            dadosLaudo.forEach(row => {
+                html += `<tr><td>${row.item}</td><td>${row.original}</td><td>${row.aditivo}</td><td class="${row.classe}">${row.diff}</td></tr>`;
+            });
+
+            totaisLaudo.forEach(row => {
+                html += `<tr class="row-total"><td>${row.item}</td><td>${row.original}</td><td>${row.aditivo}</td><td class="${row.classe}">${row.diff}</td></tr>`;
+            });
+
+            html += `</tbody></table><p style="font-size: 12px; color: #666; margin-top: 15px; font-style: italic;">* Nota: A redução na área útil interna foi calculada face a face das paredes.</p>`;
+            reportContent.innerHTML = html;
+        }
+
         function createMarker(x, y, color) {
             const m = document.createElement('div');
-            m.className = 'marker';
-            m.style.left = x + 'px'; m.style.top = y + 'px';
-            m.style.backgroundColor = color;
-            imgContainer.appendChild(m);
-            activeMarkers.push(m);
+            m.className = 'marker'; m.style.left = x + 'px'; m.style.top = y + 'px'; m.style.backgroundColor = color;
+            imgContainer.appendChild(m); activeMarkers.push(m);
         }
 
         function handleUpload(input, imgElement) {
@@ -127,7 +159,6 @@
                 reader.onload = (event) => {
                     imgElement.src = event.target.result;
                     imgElement.style.display = 'block';
-                    imgElement.style.transform = 'none';
                     imgElement.onload = () => {
                         imgContainer.style.width = imgElement.naturalWidth + 'px';
                         imgContainer.style.height = imgElement.naturalHeight + 'px';
@@ -140,7 +171,7 @@
         handleUpload(uploadNew, imgNew);
 
         document.getElementById('btnCalibrate').addEventListener('click', () => {
-            if (!imgOrig.src || !imgNew.src) return alert("Selecione os dois arquivos!");
+            if (!imgOrig.src || !imgNew.src) return alert("Suba os arquivos primeiro.");
             calibStep = 1; activeMarkers.forEach(m => m.remove()); activeMarkers = [];
             calibPanel.style.display = 'block';
             calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL.";
@@ -160,7 +191,9 @@
             } else if (calibStep === 2) {
                 p2_orig = {x, y}; createMarker(x, y, '#2196F3');
                 calibStep = 3;
+                const sT = workspace.scrollTop, sL = workspace.scrollLeft;
                 imgOrig.style.display = 'none'; imgNew.style.display = 'block'; imgNew.style.opacity = '1';
+                workspace.scrollTop = sT; workspace.scrollLeft = sL;
                 calibPanel.innerText = "PASSO 3/4: Clique no MESMO 1º PONTO na PLANTA VERMELHA.";
             } else if (calibStep === 3) {
                 p1_new = {x, y}; createMarker(x, y, '#f44336');
@@ -174,29 +207,20 @@
         function finalizar() {
             calibStep = 0; calibPanel.style.display = 'none';
             activeMarkers.forEach(m => m.remove());
-            
             const dO = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
             const dN = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
             const scale = dO / dN;
-            
-            // MATH PARA ALINHAMENTO ABSOLUTO NO PONTO 0,0
-            const translateX = p1_orig.x - (p1_new.x * scale);
-            const translateY = p1_orig.y - (p1_new.y * scale);
+            const tX = p1_orig.x - (p1_new.x * scale);
+            const tY = p1_orig.y - (p1_new.y * scale);
 
             imgOrig.style.display = 'block'; imgOrig.classList.add('color-blue');
             imgNew.classList.add('color-red');
-            imgNew.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            imgNew.style.transform = `translate(${tX}px, ${tY}px) scale(${scale})`;
             imgNew.style.opacity = document.getElementById('sliderOpacity').value;
 
-            document.getElementById('reportContent').innerHTML = `
-                <table class="report-table">
-                    <tr><td>Dormitório 1 - Parede Recuo</td><td>3,50m para 3,25m</td><td class="diff-neg">-25cm</td></tr>
-                    <tr><td>Banheiro - Largura</td><td>1,56m para 1,88m</td><td style="color:green">+32cm</td></tr>
-                    <tr style="background:#eee; font-weight:bold;"><td>Área Útil Total Estimada</td><td>50,20m² para 49,64m²</td><td class="diff-neg">-0,56m²</td></tr>
-                </table>`;
+            renderizarTabela();
         }
 
-        // --- MODO RAIO-X E PISCA-PISCA ---
         let xray = false;
         document.getElementById('btnXray').addEventListener('click', () => {
             xray = !xray;
@@ -206,8 +230,8 @@
 
         let blink = null;
         document.getElementById('btnBlink').addEventListener('click', function() {
-            if(blink) { clearInterval(blink); blink = null; imgNew.style.opacity = document.getElementById('sliderOpacity').value; }
-            else { let v = true; blink = setInterval(() => { imgNew.style.opacity = v ? '0' : '0.8'; v = !v; }, 500); }
+            if(blink) { clearInterval(blink); blink = null; this.classList.remove('active'); imgNew.style.opacity = document.getElementById('sliderOpacity').value; }
+            else { this.classList.add('active'); let v = true; blink = setInterval(() => { imgNew.style.opacity = v ? '0' : '0.8'; v = !v; }, 500); }
         });
         
         document.getElementById('sliderOpacity').addEventListener('input', (e) => { if(!xray) imgNew.style.opacity = e.target.value; });
