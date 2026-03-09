@@ -40,18 +40,6 @@ O sistema foi configurado para analisar o impacto do termo aditivo do empreendim
 
 O sistema pode cometer erros. As sobreposições e cálculos são representações visuais para facilitar o entendimento e podem conter imprecisões decorrentes da qualidade das imagens enviadas ou do alinhamento manual. Sempre consulte a planta técnica oficial e profissionais qualificados para decisões de projeto ou marcenaria.
 
----
-
-### 📦 Como publicar?
-
-Para deixar este repositório online:
-
-1. Renomeie seu arquivo principal para `index.html`.
-2. No GitHub, vá em **Settings > Pages**.
-3. Selecione a branch `main` e salve.
-
----
-
 **Desenvolvido para análise técnica de aditivos imobiliários.**
 
 ---
