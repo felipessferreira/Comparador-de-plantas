@@ -96,27 +96,18 @@
     <div class="report-section" id="relatorio">
         <h3>📋 Relatório de Alterações</h3>
         <div id="reportContent">
-            <p class="empty-state">Realize a calibração para gerar os dados comparativos.</p>
+            <p class="empty-state">Realize a calibração para habilitar o modo de medição dinâmico.</p>
         </div>
     </div>
 
     <script>
-        // ESTRUTURA DE DADOS DINÂMICA
-        const dadosLaudo = [
-            { item: "Dormitório 1 - Parede Recuo (Armário)", original: "3,50 m", aditivo: "3,25 m", diff: "- 25 cm", classe: "diff-neg" },
-            { item: "Dormitório 1 - Parede Janela", original: "3,70 m", aditivo: "3,60 m", diff: "- 10 cm", classe: "diff-neg" },
-            { item: "Dormitório 1 - Profundidade Recuo", original: "1,70 m", aditivo: "1,60 m", diff: "- 10 cm", classe: "diff-neg" },
-            { item: "Banheiro - Largura Interna", original: "1,56 m", aditivo: "1,88 m", diff: "+ 32 cm", classe: "diff-pos" },
-            { item: "Banheiro - Profundidade Interna", original: "1,90 m", aditivo: "1,78 m", diff: "- 12 cm", classe: "diff-neg" },
-            { item: "Varanda / Terraço - Largura", original: "2,46 m", aditivo: "2,41 m", diff: "- 5 cm", classe: "diff-neg" },
-            { item: "Varanda / Terraço - Profundidade", original: "1,34 m", aditivo: "1,29 m", diff: "- 5 cm", classe: "diff-neg" },
-            { item: "Área de Serviço (A.S.) - Largura", original: "1,50 m", aditivo: "1,48 m", diff: "- 2 cm", classe: "diff-neg" }
-        ];
-
-        const totaisLaudo = [
-            { item: "Área Útil Total (Estimada)", original: "~ 50,20 m²", aditivo: "~ 49,64 m²", diff: "- 0,56 m²", classe: "diff-neg" },
-            { item: "Área Privativa (Contrato)", original: "55,96 m²", aditivo: "55,96 m²", diff: "Inalterada", classe: "" }
-        ];
+        // ESTRUTURA DE DADOS VAZIA (Sera preenchida com cliques)
+        let dadosLaudo = [];
+        
+        // VARIÁVEIS DO MOTOR DE MEDIÇÃO
+        let escalaPixelsPorMetro = 0;
+        let calibStep = 0, p1_orig, p2_orig, p1_new, p2_new, activeMarkers = [];
+        let m1_orig, m2_orig, m1_new, m2_new; // Pontos para medição das paredes
 
         const uploadOrig = document.getElementById('uploadOrig');
         const uploadNew = document.getElementById('uploadNew');
@@ -127,9 +118,12 @@
         const workspace = document.getElementById('workspace');
         const reportContent = document.getElementById('reportContent');
 
-        let calibStep = 0, p1_orig, p2_orig, p1_new, p2_new, activeMarkers = [];
-
         function renderizarTabela() {
+            if (dadosLaudo.length === 0) {
+                reportContent.innerHTML = '<p class="empty-state">Nenhuma medida registrada. Siga as instruções do painel azul acima da imagem.</p>';
+                return;
+            }
+
             let html = `<table class="report-table">
                 <thead><tr><th>Ambiente / Parede Afetada</th><th>Projeto Original</th><th>Novo Aditivo</th><th>Diferença</th></tr></thead>
                 <tbody>`;
@@ -138,11 +132,7 @@
                 html += `<tr><td>${row.item}</td><td>${row.original}</td><td>${row.aditivo}</td><td class="${row.classe}">${row.diff}</td></tr>`;
             });
 
-            totaisLaudo.forEach(row => {
-                html += `<tr class="row-total"><td>${row.item}</td><td>${row.original}</td><td>${row.aditivo}</td><td class="${row.classe}">${row.diff}</td></tr>`;
-            });
-
-            html += `</tbody></table><p style="font-size: 12px; color: #666; margin-top: 15px; font-style: italic;">* Nota: A redução na área útil interna foi calculada face a face das paredes.</p>`;
+            html += `</tbody></table><p style="font-size: 12px; color: #666; margin-top: 15px; font-style: italic;">* Nota: Valores medidos dinamicamente face a face das paredes.</p>`;
             reportContent.innerHTML = html;
         }
 
@@ -150,6 +140,10 @@
             const m = document.createElement('div');
             m.className = 'marker'; m.style.left = x + 'px'; m.style.top = y + 'px'; m.style.backgroundColor = color;
             imgContainer.appendChild(m); activeMarkers.push(m);
+        }
+
+        function clearMarkers() {
+            activeMarkers.forEach(m => m.remove()); activeMarkers = [];
         }
 
         function handleUpload(input, imgElement) {
@@ -174,19 +168,21 @@
 
         document.getElementById('btnCalibrate').addEventListener('click', () => {
             if (!imgOrig.src || !imgNew.src) return alert("Selecione os arquivos primeiro.");
-            calibStep = 1; activeMarkers.forEach(m => m.remove()); activeMarkers = [];
+            calibStep = 1; clearMarkers(); dadosLaudo = []; renderizarTabela();
             calibPanel.style.display = 'block';
             calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL (Original).";
             imgOrig.style.display = 'block'; imgOrig.style.opacity = '1'; imgOrig.classList.remove('color-blue');
             imgNew.style.display = 'none';
         });
 
+        // MOTOR DE CLIQUES HÍBRIDO (Calibração + Medição Automática)
         imgContainer.addEventListener('mousedown', (e) => {
             if (calibStep === 0) return;
             const rect = imgContainer.getBoundingClientRect();
             const x = e.pageX - (rect.left + window.scrollX);
             const y = e.pageY - (rect.top + window.scrollY);
 
+            // --- FASE 1: ALINHAMENTO ---
             if (calibStep === 1) {
                 p1_orig = {x, y}; createMarker(x, y, '#2196F3');
                 calibStep = 2; calibPanel.innerText = "PASSO 2/4: Clique no 2º PONTO na PLANTA AZUL.";
@@ -202,13 +198,29 @@
                 calibStep = 4; calibPanel.innerText = "PASSO 4/4: Clique no MESMO 2º PONTO na PLANTA VERMELHA.";
             } else if (calibStep === 4) {
                 p2_new = {x, y}; createMarker(x, y, '#f44336');
-                setTimeout(finalizar, 300);
+                setTimeout(finalizarAlinhamento, 300);
+            } 
+            // --- FASE 2: MEDIÇÃO DINÂMICA ---
+            else if (calibStep === 5) {
+                m1_orig = {x, y}; createMarker(x, y, '#000'); // Marcador de medida
+                calibStep = 6; calibPanel.innerText = "MEDIÇÃO 2/4: Clique no FIM da parede na PLANTA AZUL.";
+            } else if (calibStep === 6) {
+                m2_orig = {x, y}; createMarker(x, y, '#000');
+                calibStep = 7; 
+                imgOrig.style.opacity = '0.1'; imgNew.style.opacity = '1'; // Destaca a vermelha
+                calibPanel.innerText = "MEDIÇÃO 3/4: Clique no INÍCIO correspondente na PLANTA VERMELHA.";
+            } else if (calibStep === 7) {
+                m1_new = {x, y}; createMarker(x, y, '#000');
+                calibStep = 8; calibPanel.innerText = "MEDIÇÃO 4/4: Clique no FIM correspondente na PLANTA VERMELHA.";
+            } else if (calibStep === 8) {
+                m2_new = {x, y}; createMarker(x, y, '#000');
+                setTimeout(processarMedicao, 300);
             }
         });
 
-        function finalizar() {
-            calibStep = 0; calibPanel.style.display = 'none';
-            activeMarkers.forEach(m => m.remove());
+        function finalizarAlinhamento() {
+            calibPanel.style.display = 'none';
+            clearMarkers();
             const dO = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
             const dN = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
             const scale = dO / dN;
@@ -222,7 +234,59 @@
             imgNew.style.transform = `translate(${tX}px, ${tY}px) scale(${scale})`;
             imgNew.style.opacity = document.getElementById('sliderOpacity').value;
 
-            renderizarTabela();
+            // Coleta a escala real para habilitar as medições
+            setTimeout(() => {
+                let distReal = prompt("🎯 Alinhamento Concluído!\n\nPara automatizar as medidas, digite a distância real (em metros) entre os dois pontos que você acabou de calibrar (Ex: 3.50):", "3.50");
+                
+                if (distReal && !isNaN(parseFloat(distReal))) {
+                    escalaPixelsPorMetro = dO / parseFloat(distReal);
+                    calibStep = 5; // Muda para o modo de medição
+                    calibPanel.style.display = 'block';
+                    calibPanel.style.background = '#e8f5e9'; calibPanel.style.color = '#1b5e20'; calibPanel.style.borderColor = '#4CAF50';
+                    calibPanel.innerText = "📏 MODO MEDIÇÃO ATIVADO: Clique no INÍCIO de uma parede na PLANTA AZUL.";
+                    renderizarTabela();
+                } else {
+                    calibStep = 0;
+                    alert("Escala não informada. A tabela automática não funcionará.");
+                }
+            }, 300);
+        }
+
+        function processarMedicao() {
+            // Restaura visual
+            imgOrig.style.opacity = '1';
+            imgNew.style.opacity = document.getElementById('sliderOpacity').value;
+            clearMarkers();
+
+            // Matemática
+            const pxOrig = Math.hypot(m2_orig.x - m1_orig.x, m2_orig.y - m1_orig.y);
+            const pxNew = Math.hypot(m2_new.x - m1_new.x, m2_new.y - m1_new.y);
+            
+            const metroOrig = pxOrig / escalaPixelsPorMetro;
+            const metroNew = pxNew / escalaPixelsPorMetro;
+            const diffMetro = metroNew - metroOrig;
+            const diffCm = Math.round(diffMetro * 100);
+
+            // Interface
+            let nomeAmbiente = prompt(`📐 Medida Calculada:\nOriginal: ${metroOrig.toFixed(2)}m | Aditivo: ${metroNew.toFixed(2)}m\n\nDigite o nome desta parede/ambiente para adicionar à tabela:`, "Novo Ambiente");
+
+            if (nomeAmbiente) {
+                let diffClass = diffCm < 0 ? 'diff-neg' : (diffCm > 0 ? 'diff-pos' : '');
+                let diffText = diffCm > 0 ? `+ ${diffCm} cm` : (diffCm === 0 ? `0 cm` : `- ${Math.abs(diffCm)} cm`);
+
+                dadosLaudo.push({
+                    item: nomeAmbiente,
+                    original: metroOrig.toFixed(2) + " m",
+                    aditivo: metroNew.toFixed(2) + " m",
+                    diff: diffText,
+                    classe: diffClass
+                });
+                renderizarTabela();
+            }
+
+            // Loop contínuo: volta para o passo 5 para permitir medir a próxima parede
+            calibStep = 5;
+            calibPanel.innerText = "📏 MODO MEDIÇÃO: Clique no INÍCIO de uma NOVA PAREDE na PLANTA AZUL.";
         }
 
         let xray = false;
