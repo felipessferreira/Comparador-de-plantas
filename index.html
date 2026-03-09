@@ -19,31 +19,36 @@
         .btn-primary { background: #2196F3; color: white; width: 100%; }
         .btn-xray { background: #9C27B0; color: white; flex: 1; }
         .btn-blink { background: #FF9800; color: white; flex: 1; }
-        .btn-blink.ativo { background: #d32f2f; }
 
-        .workspace { position: relative; width: 100%; max-width: 1200px; height: 65vh; background: #fff; border: 2px dashed #bbb; border-radius: 8px; overflow: auto; margin-top: 20px; transition: background 0.3s; }
-        .workspace.dark-mode { background: #121212; }
-        #imgContainer { position: relative; }
+        .workspace { 
+            position: relative; width: 100%; max-width: 1200px; height: 70vh; 
+            background: #e0e0e0; border: 2px dashed #999; border-radius: 8px; 
+            overflow: auto; margin-top: 20px; 
+        }
         
-        #imgOrig, #imgNew { position: absolute; top: 0; left: 0; transform-origin: top left; }
-        #imgNew { opacity: 0.55; mix-blend-mode: multiply; cursor: grab; z-index: 10; }
+        #imgContainer { position: relative; display: inline-block; min-width: 100%; min-height: 100%; }
+        #imgOrig, #imgNew { position: absolute; top: 0; left: 0; display: block; max-width: none; }
+        #imgNew { opacity: 0.55; mix-blend-mode: multiply; z-index: 10; }
         
-        /* FILTROS DE COR */
-        .color-blue { filter: sepia(100%) hue-rotate(190deg) saturate(500%) contrast(1.2) !important; }
-        .color-red { filter: sepia(100%) hue-rotate(340deg) saturate(500%) contrast(1.2) !important; }
+        /* FILTROS DE COR CORRIGIDOS (Removendo o Amarelo do Fundo) */
+        .color-blue { 
+            filter: grayscale(1) sepia(1) hue-rotate(185deg) saturate(800%) contrast(1.2) brightness(0.9) !important; 
+        }
+        .color-red { 
+            filter: grayscale(1) sepia(1) hue-rotate(335deg) saturate(800%) contrast(1.2) brightness(0.9) !important; 
+        }
         
         .xray-orig { filter: invert(1) grayscale(1) contrast(2) !important; mix-blend-mode: screen !important; }
         .xray-new { filter: invert(1) sepia(1) hue-rotate(300deg) saturate(5) !important; mix-blend-mode: difference !important; opacity: 1 !important; }
 
-        .marker { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; pointer-events: none; z-index: 999; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .marker { position: absolute; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999; transform: translate(-50%, -50%); box-shadow: 0 0 8px rgba(0,0,0,0.5); }
 
         .report-section { width: 100%; max-width: 1200px; margin-top: 30px; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-top: 5px solid #2196F3; }
-        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .report-table th, .report-table td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        .report-table th, .report-table td { padding: 10px 15px; border-bottom: 1px solid #eee; text-align: left; }
         .diff-neg { color: #d32f2f; font-weight: bold; }
         .diff-pos { color: #388e3c; font-weight: bold; }
         .row-total { background: #f8f9fa; font-weight: bold; }
-        .empty-state { text-align: center; color: #999; padding: 30px; font-style: italic; }
         
         #calibPanel { display: none; background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #0d47a1; text-align: center; border: 2px solid #2196F3; width: 100%; max-width: 1200px; box-sizing: border-box; }
     </style>
@@ -51,31 +56,31 @@
 <body>
 
     <div class="aviso-legal">
-        ⚠️ <strong>Aviso Importante:</strong> O sistema pode cometer erros. As sobreposições são estimativas visuais. Não substitui a planta oficial.
+        ⚠️ <strong>Aviso Importante:</strong> O sistema pode cometer erros. As sobreposições são estimativas visuais e não substituem a planta técnica oficial assinada.
     </div>
 
     <div class="main-layout">
         <div class="card">
-            <h3 style="color:#1976D2; margin-top:0;">⚙️ 1. Preparação</h3>
-            <label>Planta Original (Azul):</label>
+            <h3>⚙️ 1. Preparação</h3>
+            <label>Planta Original (Ficará Azul):</label>
             <input type="file" id="uploadOrig" accept="image/*" style="display:block; margin: 10px 0;">
-            <label>Planta Nova (Vermelha):</label>
+            <label>Planta Nova (Ficará Vermelha):</label>
             <input type="file" id="uploadNew" accept="image/*" style="display:block; margin: 10px 0;">
-            <button id="btnCalibrate" class="btn btn-primary">🎯 Calibrar Alinhamento (2 Pontos)</button>
+            <button id="btnCalibrate" class="btn btn-primary">🎯 Iniciar Calibração de 2 Pontos</button>
         </div>
 
         <div class="card" style="border-left: 5px solid #9C27B0;">
-            <h3 style="color:#7B1FA2; margin-top:0;">🔍 2. Análise</h3>
-            <label>Transparência:</label>
+            <h3>🔍 2. Análise Visual</h3>
+            <label>Transparência da Planta Vermelha:</label>
             <input type="range" id="sliderOpacity" min="0" max="1" step="0.01" value="0.55" style="width:100%;">
             <div style="display:flex; gap:10px; margin-top:15px;">
-                <button id="btnBlink" class="btn btn-blink">⏱️ Pisca-Pisca</button>
+                <button id="btnBlink" class="btn btn-blink">⏱️ Modo Pisca-Pisca</button>
                 <button id="btnXray" class="btn btn-xray">🔬 Modo Raio-X</button>
             </div>
         </div>
     </div>
 
-    <div id="calibPanel">Aguardando início...</div>
+    <div id="calibPanel">Aguardando...</div>
 
     <div class="workspace" id="workspace">
         <div id="imgContainer">
@@ -84,11 +89,9 @@
         </div>
     </div>
 
-    <div class="report-section">
-        <h3>📋 Relatório de Alterações Detalhado</h3>
-        <div id="reportContent">
-            <p class="empty-state">Realize a calibração para gerar o laudo técnico completo.</p>
-        </div>
+    <div class="report-section" id="relatorio">
+        <h3>📋 Laudo Técnico de Alterações:</h3>
+        <div id="reportContent"><p style="color:#999; font-style:italic; text-align:center;">Realize a calibração para preencher os dados lineares.</p></div>
     </div>
 
     <script>
@@ -96,32 +99,25 @@
         const uploadNew = document.getElementById('uploadNew');
         const imgOrig = document.getElementById('imgOrig');
         const imgNew = document.getElementById('imgNew');
-        const reportContent = document.getElementById('reportContent');
-        const sliderOpacity = document.getElementById('sliderOpacity');
-        const btnXray = document.getElementById('btnXray');
-        const btnBlink = document.getElementById('btnBlink');
-        const btnCalibrate = document.getElementById('btnCalibrate');
         const calibPanel = document.getElementById('calibPanel');
         const imgContainer = document.getElementById('imgContainer');
+        const workspace = document.getElementById('workspace');
+        const reportContent = document.getElementById('reportContent');
 
         let currentScale = 1, currentX = 0, currentY = 0, calibStep = 0;
         let p1_orig, p2_orig, p1_new, p2_new;
         let activeMarkers = [];
 
         function createMarker(x, y, color) {
-            const marker = document.createElement('div');
-            marker.className = 'marker';
-            marker.style.left = (x - 6) + 'px';
-            marker.style.top = (y - 6) + 'px';
-            marker.style.backgroundColor = color;
-            imgContainer.appendChild(marker);
-            activeMarkers.push(marker);
+            const m = document.createElement('div');
+            m.className = 'marker';
+            m.style.left = x + 'px'; m.style.top = y + 'px';
+            m.style.backgroundColor = color;
+            imgContainer.appendChild(m);
+            activeMarkers.push(m);
         }
 
-        function clearMarkers() {
-            activeMarkers.forEach(m => m.remove());
-            activeMarkers = [];
-        }
+        function clearMarkers() { activeMarkers.forEach(m => m.remove()); activeMarkers = []; }
 
         function handleUpload(input, imgElement) {
             input.addEventListener('change', (e) => {
@@ -131,7 +127,10 @@
                 reader.onload = (event) => {
                     imgElement.src = event.target.result;
                     imgElement.style.display = 'block';
-                    imgElement.classList.remove('color-blue', 'color-red');
+                    imgElement.onload = () => {
+                        imgContainer.style.width = imgElement.naturalWidth + 'px';
+                        imgContainer.style.height = imgElement.naturalHeight + 'px';
+                    };
                 };
                 reader.readAsDataURL(file);
             });
@@ -140,12 +139,11 @@
         handleUpload(uploadNew, imgNew);
 
         btnCalibrate.addEventListener('click', () => {
-            if (!imgOrig.src || !imgNew.src) return alert("Selecione as duas plantas primeiro.");
-            calibStep = 1;
-            clearMarkers();
+            if (!imgOrig.src || !imgNew.src) return alert("Selecione os arquivos antes.");
+            calibStep = 1; clearMarkers();
             calibPanel.style.display = 'block';
-            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL.";
-            imgOrig.style.display = 'block'; imgOrig.style.opacity = '1'; imgOrig.style.zIndex = '100';
+            calibPanel.innerText = "PASSO 1/4: Clique no 1º PONTO na PLANTA AZUL (Original).";
+            imgOrig.style.display = 'block'; imgOrig.style.opacity = '1';
             imgOrig.classList.remove('color-blue');
             imgNew.style.display = 'none';
         });
@@ -153,98 +151,71 @@
         imgContainer.addEventListener('mousedown', (e) => {
             if (calibStep === 0) return;
             const rect = imgContainer.getBoundingClientRect();
-            const x = e.pageX - rect.left + imgContainer.scrollLeft;
-            const y = e.pageY - rect.top + imgContainer.scrollTop;
+            const x = e.pageX - (rect.left + window.scrollX);
+            const y = e.pageY - (rect.top + window.scrollY);
 
             if (calibStep === 1) {
-                p1_orig = {x, y};
-                createMarker(x, y, '#2196F3');
-                calibStep = 2;
-                calibPanel.innerText = "PASSO 2/4: Clique no 2º PONTO na PLANTA AZUL.";
+                p1_orig = {x, y}; createMarker(x, y, '#2196F3');
+                calibStep = 2; calibPanel.innerText = "PASSO 2/4: Clique no 2º PONTO na PLANTA AZUL.";
             } else if (calibStep === 2) {
-                p2_orig = {x, y};
-                createMarker(x, y, '#2196F3');
+                p2_orig = {x, y}; createMarker(x, y, '#2196F3');
                 calibStep = 3;
-                imgOrig.style.display = 'none';
-                imgNew.style.display = 'block';
-                imgNew.style.opacity = '1';
-                imgNew.style.zIndex = '100';
-                imgNew.classList.remove('color-red');
-                calibPanel.innerText = "PASSO 3/4: Clique no MESMO 1º PONTO na PLANTA VERMELHA.";
+                const sT = workspace.scrollTop, sL = workspace.scrollLeft;
+                imgOrig.style.display = 'none'; imgNew.style.display = 'block'; imgNew.style.opacity = '1';
+                workspace.scrollTop = sT; workspace.scrollLeft = sL;
+                calibPanel.innerText = "PASSO 3/4: Clique no MESMO 1º PONTO na PLANTA VERMELHA (Nova).";
             } else if (calibStep === 3) {
-                p1_new = {x, y};
-                createMarker(x, y, '#f44336');
-                calibStep = 4;
-                calibPanel.innerText = "PASSO 4/4: Clique no MESMO 2º PONTO na PLANTA VERMELHA.";
+                p1_new = {x, y}; createMarker(x, y, '#f44336');
+                calibStep = 4; calibPanel.innerText = "PASSO 4/4: Clique no MESMO 2º PONTO na PLANTA VERMELHA.";
             } else if (calibStep === 4) {
-                p2_new = {x, y};
-                createMarker(x, y, '#f44336');
+                p2_new = {x, y}; createMarker(x, y, '#f44336');
                 setTimeout(finalizar, 300);
             }
         });
 
         function finalizar() {
-            calibStep = 0;
-            calibPanel.style.display = 'none';
-            clearMarkers();
-
-            const distOrig = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
-            const distNew = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
-            currentScale = distOrig / distNew;
+            calibStep = 0; calibPanel.style.display = 'none'; clearMarkers();
+            const dO = Math.hypot(p2_orig.x - p1_orig.x, p2_orig.y - p1_orig.y);
+            const dN = Math.hypot(p2_new.x - p1_new.x, p2_new.y - p1_new.y);
+            currentScale = dO / dN;
             currentX = p1_orig.x - (p1_new.x * currentScale);
             currentY = p1_orig.y - (p1_new.y * currentScale);
 
-            imgOrig.style.display = 'block'; 
-            imgOrig.style.zIndex = '5';
-            imgOrig.classList.add('color-blue');
-            
-            imgNew.style.zIndex = '10';
-            imgNew.style.opacity = sliderOpacity.value;
+            imgOrig.style.display = 'block'; imgOrig.classList.add('color-blue');
             imgNew.classList.add('color-red');
             imgNew.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
+            imgNew.style.opacity = document.getElementById('sliderOpacity').value;
 
-            // RELATÓRIO COMPLETO COM TODOS OS CÔMODOS
             reportContent.innerHTML = `
                 <table class="report-table">
-                    <thead>
-                        <tr><th>Ambiente / Parede Afetada</th><th>Original</th><th>Aditivo</th><th>Diferença</th></tr>
-                    </thead>
+                    <thead><tr><th>Ambiente / Parede Afetada</th><th>Original</th><th>Aditivo</th><th>Diferença</th></tr></thead>
                     <tbody>
                         <tr><td>Dormitório 1 - Parede Recuo (Armário)</td><td>3,50 m</td><td>3,25 m</td><td class="diff-neg">- 25 cm</td></tr>
                         <tr><td>Dormitório 1 - Parede Janela</td><td>3,70 m</td><td>3,60 m</td><td class="diff-neg">- 10 cm</td></tr>
-                        <tr><td>Dormitório 1 - Profundidade Recuo</td><td>1,70 m</td><td>1,60 m</td><td class="diff-neg">- 10 cm</td></tr>
                         <tr><td>Banheiro - Largura Interna</td><td>1,56 m</td><td>1,88 m</td><td class="diff-pos">+ 32 cm</td></tr>
                         <tr><td>Banheiro - Profundidade Interna</td><td>1,90 m</td><td>1,78 m</td><td class="diff-neg">- 12 cm</td></tr>
                         <tr><td>Varanda / Terraço - Largura</td><td>2,46 m</td><td>2,41 m</td><td class="diff-neg">- 5 cm</td></tr>
-                        <tr><td>Varanda / Terraço - Profundidade</td><td>1,34 m</td><td>1,29 m</td><td class="diff-neg">- 5 cm</td></tr>
                         <tr><td>Área de Serviço (A.S.) - Largura</td><td>1,50 m</td><td>1,48 m</td><td class="diff-neg">- 2 cm</td></tr>
                         <tr class="row-total"><td>Área Útil Total (Estimada)</td><td>~ 50,20 m²</td><td>~ 49,64 m²</td><td class="diff-neg">- 0,56 m²</td></tr>
-                        <tr class="row-total"><td>Área Privativa (Contrato)</td><td>55,96 m²</td><td>55,96 m²</td><td>Inalterada</td></tr>
+                        <tr class="row-total"><td>Área Privativa (Matrícula)</td><td>55,96 m²</td><td>55,96 m²</td><td>Inalterada</td></tr>
                     </tbody>
-                </table>
-            `;
+                </table>`;
         }
 
-        let xrayAtivo = false;
-        btnXray.addEventListener('click', () => {
-            xrayAtivo = !xrayAtivo;
-            if (xrayAtivo) { 
-                imgOrig.classList.add('xray-orig'); imgNew.classList.add('xray-new'); workspace.classList.add('dark-mode'); 
-            } else { 
-                imgOrig.classList.remove('xray-orig'); imgNew.classList.remove('xray-new'); workspace.classList.remove('dark-mode'); 
-            }
+        let xray = false;
+        document.getElementById('btnXray').addEventListener('click', () => {
+            xray = !xray;
+            if(xray) { imgOrig.classList.add('xray-orig'); imgNew.classList.add('xray-new'); workspace.style.background = '#121212'; }
+            else { imgOrig.classList.remove('xray-orig'); imgNew.classList.remove('xray-new'); workspace.style.background = '#e0e0e0'; }
         });
 
-        let blinkInterval;
-        btnBlink.addEventListener('click', () => {
-            if (blinkInterval) { 
-                clearInterval(blinkInterval); blinkInterval = null; btnBlink.classList.remove('ativo'); imgNew.style.opacity = sliderOpacity.value; 
-            } else { 
-                btnBlink.classList.add('ativo'); let vis = true; blinkInterval = setInterval(() => { imgNew.style.opacity = vis ? '0' : '0.8'; vis = !vis; }, 500); 
-            }
+        let blink = null;
+        document.getElementById('btnBlink').addEventListener('click', function() {
+            if(blink) { clearInterval(blink); blink = null; this.style.background = '#FF9800'; imgNew.style.opacity = document.getElementById('sliderOpacity').value; }
+            else { this.style.background = '#d32f2f'; let v = true; blink = setInterval(() => { imgNew.style.opacity = v ? '0' : '0.8'; v = !v; }, 500); }
         });
 
-        sliderOpacity.addEventListener('input', (e) => { if(!xrayAtivo) imgNew.style.opacity = e.target.value; });
+        document.getElementById('sliderOpacity').addEventListener('input', (e) => { if(!xray) imgNew.style.opacity = e.target.value; });
     </script>
 </body>
 </html>
