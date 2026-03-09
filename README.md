@@ -6,13 +6,9 @@ Este projeto é uma ferramenta web estática e segura projetada para realizar a 
 
 O sistema foi configurado para analisar o impacto do termo aditivo do empreendimento **Jardim dos Ipês**. A análise foca na distinção entre:
 
-* 
 **Área Útil:** Espaço real interno ("vassoura") onde houve uma redução estimada de **0,56 m²** devido ao reposicionamento de paredes.
 
-
-* 
 **Área Privativa:** Metragem legal de contrato (**55,96 m²**) que permanece inalterada no aditivo para fins de registro em cartório.
-
 
 
 ## 🚀 Funcionalidades Principais
